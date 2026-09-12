@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="bg">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>Glovia — вход / sign in</title>
+<style>
+  :root { color-scheme: light dark; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    max-width: 420px; margin: 0 auto; padding: 64px 24px;
+    line-height: 1.6; font-size: 17px; text-align: center;
+    color: #1a1a1a; background: #FAFAF6;
+  }
+  h1 { font-size: 1.35rem; margin: 0 0 12px; }
+  p { margin: 0 0 16px; }
+  .btn {
+    display: inline-block; margin-top: 8px; padding: 14px 28px;
+    background: #0A0A0A; color: #FAFAF6; text-decoration: none;
+    border-radius: 999px; font-weight: 600;
+  }
+  .muted { color: #6B6B6B; font-size: 15px; }
+  @media (prefers-color-scheme: dark) {
+    body { color: #F5F5F0; background: #0F0F0F; }
+    .btn { background: #F5F5F0; color: #0A0A0A; }
+    .muted { color: #9A9A95; }
+  }
+</style>
+</head>
+<body>
+
+<h1 id="title">Отваряме Glovia…</h1>
+<p id="msg" class="muted">Ако нищо не се случи, натиснете бутона.</p>
+<p><a id="open" class="btn" href="#">Отвори Glovia</a></p>
+<p id="hint" class="muted"></p>
+
+<script>
+// Supabase sends the user here after verifying the email link. Everything the
+// app needs to complete sign-in is in the URL — and it is in two different
+// places depending on the flow: PKCE puts `code` in the query string, the
+// implicit flow puts the tokens in the fragment. Forward both, unchanged.
+(function () {
+  var search = window.location.search || '';
+  var hash   = window.location.hash || '';
+  var params = new URLSearchParams(search + '&' + hash.replace(/^#/, ''));
+
+  var title = document.getElementById('title');
+  var msg   = document.getElementById('msg');
+  var open  = document.getElementById('open');
+  var hint  = document.getElementById('hint');
+
+  var err = params.get('error_description') || params.get('error');
+  if (err) {
+    // An expired or already-used link is the common case, and it has a real
+    // cause worth naming: some mail providers open links to scan them, which
+    // spends a one-time code before the person ever taps it.
+    title.textContent = 'Връзката вече не е валидна';
+    msg.textContent = decodeURIComponent(err).replace(/\+/g, ' ');
+    open.style.display = 'none';
+    hint.textContent = 'Поискайте нов линк от екрана за вход в приложението. '
+      + 'Link is no longer valid — request a new one from the app.';
+    return;
+  }
+
+  // The scheme is the one registered in the shipped binary. It is `glowai`
+  // rather than `glovia` because the bundle's URL types cannot be renamed
+  // without a new build, and the name the user reads is not this string.
+  var target = 'glowai://auth-callback' + search + hash;
+  open.setAttribute('href', target);
+  hint.textContent = 'Ако приложението не е инсталирано на това устройство, '
+    + 'отворете имейла на телефона с Glovia. / Open this email on the phone '
+    + 'that has Glovia installed.';
+
+  window.location.replace(target);
+})();
+</script>
+
+</body>
+</html>
